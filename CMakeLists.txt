@@ -18,7 +18,7 @@ endif ()
 include(${CPM_DOWNLOAD_LOCATION})
 
 project(pf_mainloop
-        VERSION 0.1.0
+        VERSION 1.0.0
         DESCRIPTION "Header only library providing a mainloop"
         HOMEPAGE_URL "https://github.com/PetrFlajsingr/pf_mainloop"
         )
