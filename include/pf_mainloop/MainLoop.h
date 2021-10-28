@@ -1,6 +1,12 @@
 //
 // Created by xflajs00 on 27.10.2021.
 //
+/**
+ * @file MainLoop.h
+ * @brief A global mainloop with main thread synchronization functionality.
+ * @author Petr Flajšingr
+ * @date 27.10.21
+ */
 
 #ifndef PF_MAINLOOP_MAINLOOP_H
 #define PF_MAINLOOP_MAINLOOP_H
@@ -19,6 +25,9 @@
 namespace pf {
 
 namespace details {
+/**
+ * @brief Task to be run at certain time.
+ */
 struct DelayedTask {
   inline DelayedTask(std::invocable auto &&fnc, const std::chrono::steady_clock::time_point &execTime)
       : fnc(std::forward<decltype(fnc)>(fnc)), execTime(execTime) {}
@@ -29,7 +38,9 @@ struct DelayedTask {
 
   inline void operator()() const;
 };
-
+/**
+ * @brief Task to be run repeatedly.
+ */
 struct RepeatedTask {
   inline RepeatedTask(std::invocable auto &&fnc, std::chrono::milliseconds period)
       : fnc(std::forward<decltype(fnc)>(fnc)), execTime(std::chrono::steady_clock::now() + period), period(period) {}
@@ -46,32 +57,69 @@ struct RepeatedTask {
 };
 }// namespace details
 
+/**
+ * @brief An unsubscriber class to cancel repeated tasks.
+ */
 class RepeatCancel {
  public:
   RepeatCancel(std::invocable auto &&fnc) : cancelFnc(std::forward<decltype(fnc)>(fnc)) {}
 
+  /**
+   * @brief Remove a repeated task from running in the main loop.
+   */
   inline void cancel();
  private:
   std::function<void()> cancelFnc;
 };
 
+/**
+ * @brief Mainloop implementation. Allows the user to enqueue a task to be run in the next loop or after some time delay.
+ * Tasks called periodically are also supported.
+ */
 class MainLoop {
  public:
+  /**
+   * Get global instance of the MainLoop.
+   * @return global instance of MainLoop
+   */
   static inline const std::shared_ptr<MainLoop> &Get();
 
+  /**
+   * Set a function to be called on every loop.
+   * @param fnc
+   */
   void setOnMainLoop(std::invocable<std::chrono::nanoseconds> auto &&fnc) {
     mainLoopFnc = std::forward<decltype(fnc)>(fnc);
   }
-
+  /**
+   * Set a function to be called after ending the loop.
+   * @param fnc
+   */
   void setOnDone(std::invocable auto &&fnc) {
     onDoneFnc = std::forward<decltype(fnc)>(fnc);
   }
 
+  /**
+   * Get total runtime since MainLoop::run() has been called/
+   * @remark If MainLoop::run() wasn't called then the result is undefined.
+   * @return time difference between now and a call to MainLoop::run()
+   */
   inline std::chrono::nanoseconds getRuntime() const;
 
+  /**
+   * Start the loop. Blocks current thread and considers it as the main one.
+   */
   inline void run();
+  /**
+   * Set a flag to stop the loop. Current loop will finish and it'll stop in the next one.
+   */
   inline void stop();
 
+  /**
+   * Enqueue a task. If the task is enqueued from the main thread it'll be executed immediately,
+   * otherwise it'll be executed in the next loop.
+   * @param fnc task to be executed
+   */
   void enqueue(std::invocable auto &&fnc) {
     if (std::this_thread::get_id() == mainThreadId) {
       fnc();
@@ -79,13 +127,31 @@ class MainLoop {
       enqueue(std::forward<decltype(fnc)>(fnc), std::chrono::milliseconds{0});
     }
   }
+  /**
+   * Enqueue a task. The task'll be executed in the next loop.
+   * @param fnc task to be executed
+   */
+  void forceEnqueue(std::invocable auto &&fnc) {
+    enqueue(std::forward<decltype(fnc)>(fnc), std::chrono::milliseconds{0});
+  }
 
+  /**
+   * Enqueue a task to be executed after time delay. The task will be executed in the main thread.
+   * @param fnc task to be executed
+   * @param delay time delay
+   */
   void enqueue(std::invocable auto &&fnc, std::chrono::milliseconds delay) {
     const auto execTime = std::chrono::steady_clock::now() + delay;
     auto queueAccess = taskQueue.writeAccess();
     queueAccess->emplace(std::forward<decltype(fnc)>(fnc), execTime);
   }
 
+  /**
+   * Add a task which'll be executed periodically on the main thread.
+   * @param fnc task to be executed periodically
+   * @param period time period between executions
+   * @return a structure which allows for stopping the periodic task
+   */
   RepeatCancel repeat(std::invocable auto &&fnc, std::chrono::milliseconds period) {
     if (std::this_thread::get_id() != mainThreadId) {
       assert(false && "MainLoop::repeat should only be called from the main thread");

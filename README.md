@@ -21,7 +21,8 @@ pf::MainLoop::Get()->run(); // blocking operation
 
 The class also supports executing delayed tasks, tasks can be enqueued from a different thread and they'll be run in the main loop's thread:
 ```cpp
-// if enqueued from main loop's thread the function will be called immediately, otherwise it'll run in the next loop
+// if enqueued from main loop's thread the function will be called immediately, 
+// otherwise it'll run in the next loop
 pf::MainLoop::Get()->enqueue([] {
   std::cout << "Enqueued task" << std::endl;
 });
