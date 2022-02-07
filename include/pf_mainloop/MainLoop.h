@@ -16,7 +16,6 @@
 #include <concepts>
 #include <functional>
 #include <memory>
-#include <pf_common/coroutines/Sequence.h>
 #include <pf_common/parallel/Safe.h>
 #include <queue>
 #include <set>
@@ -45,11 +44,11 @@ struct RepeatedTask {
   inline RepeatedTask(std::invocable auto &&fnc, std::chrono::milliseconds period)
       : fnc(std::forward<decltype(fnc)>(fnc)), execTime(std::chrono::steady_clock::now() + period), period(period) {}
 
-  static inline auto IdGenerator = iota<std::size_t>();
+  static inline std::size_t IdCounter{};
   std::function<void()> fnc;
   std::chrono::steady_clock::time_point execTime;
   std::chrono::milliseconds period;
-  std::size_t id = getNext(IdGenerator);
+  std::size_t id = IdCounter++;
 
   inline bool operator<(const RepeatedTask &rhs) const;
 
