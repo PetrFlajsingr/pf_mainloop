@@ -50,7 +50,7 @@ target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 target_link_libraries(${PROJECT_NAME} INTERFACE pf_common::pf_common)
 
 
-install(TARGETS ${PROJECT_NAME} pf_common
+install(TARGETS ${PROJECT_NAME} pf_common magic_enum
         EXPORT ${PROJECT_NAME}_Targets
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
