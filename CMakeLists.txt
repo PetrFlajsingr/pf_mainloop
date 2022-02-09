@@ -18,8 +18,8 @@ endif ()
 include(${CPM_DOWNLOAD_LOCATION})
 
 project(pf_mainloop
-        VERSION 1.0.0
-        DESCRIPTION "Header only library providing a mainloop"
+        VERSION 1.0.2
+        DESCRIPTION "Heaer only library providing a mainloop"
         HOMEPAGE_URL "https://github.com/PetrFlajsingr/pf_mainloop"
         )
 
@@ -28,7 +28,7 @@ set(CMAKE_CXX_STANDARD 20)
 CPMAddPackage(
         NAME pf_common
         GITHUB_REPOSITORY PetrFlajsingr/pf_common
-        GIT_TAG master
+        GIT_TAG v1.2.0
 )
 
 include(GNUInstallDirs)
