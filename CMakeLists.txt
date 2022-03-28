@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.20)
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-        URL "https://github.com/cpp-pm/hunter/archive/v0.23.315.tar.gz"
-        SHA1 "ea5d72afc0df67f2126e7fd069f20c5f723709e1"
+        URL "https://github.com/cpp-pm/hunter/archive/v0.23.321.tar.gz"
+        SHA1 "5e53cbb0429037ea8e2592bfd92704b8ff3ab492"
 )
 
 
@@ -18,17 +18,21 @@ endif ()
 include(${CPM_DOWNLOAD_LOCATION})
 
 project(pf_mainloop
-        VERSION 1.0.2
-        DESCRIPTION "Heaer only library providing a mainloop"
+        VERSION 1.0.1
+        DESCRIPTION "Header only library providing a mainloop"
         HOMEPAGE_URL "https://github.com/PetrFlajsingr/pf_mainloop"
         )
 
-set(CMAKE_CXX_STANDARD 20)
+if (MSVC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.29.30129 AND CMAKE_VERSION VERSION_GREATER 3.20.3)
+    set(CMAKE_CXX_STANDARD 23) # /std:c++latest - unlocks the non stable cpp20 features. For new 16.11 versions
+else ()
+    set(CMAKE_CXX_STANDARD 20) # /std:c++latest for msvc and -std=c++20 for everyone else.
+endif ()
 
 CPMAddPackage(
         NAME pf_common
         GITHUB_REPOSITORY PetrFlajsingr/pf_common
-        GIT_TAG v1.2.0
+        GIT_TAG v1.0.2
 )
 
 include(GNUInstallDirs)
