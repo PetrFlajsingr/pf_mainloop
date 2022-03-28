@@ -32,7 +32,7 @@ endif ()
 CPMAddPackage(
         NAME pf_common
         GITHUB_REPOSITORY PetrFlajsingr/pf_common
-        GIT_TAG v1.0.2
+        GIT_TAG master
 )
 
 include(GNUInstallDirs)
