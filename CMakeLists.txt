@@ -1,22 +1,4 @@
 cmake_minimum_required(VERSION 3.20)
-
-include("cmake/HunterGate.cmake")
-HunterGate(
-        URL "https://github.com/cpp-pm/hunter/archive/v0.23.321.tar.gz"
-        SHA1 "5e53cbb0429037ea8e2592bfd92704b8ff3ab492"
-)
-
-
-set(CPM_DOWNLOAD_LOCATION "${CMAKE_SOURCE_DIR}/cmake/CPM.cmake")
-set(CPM_DOWNLOAD_VERSION 0.32.2)
-
-if (NOT (EXISTS ${CPM_DOWNLOAD_LOCATION} AND CPM_VERSION STREQUAL CPM_DOWNLOAD_VERSION))
-    message(STATUS "Downloading CPM.cmake")
-    file(DOWNLOAD https://github.com/TheLartians/CPM.cmake/releases/download/v${CPM_DOWNLOAD_VERSION}/CPM.cmake ${CPM_DOWNLOAD_LOCATION})
-endif ()
-
-include(${CPM_DOWNLOAD_LOCATION})
-
 project(pf_mainloop
         VERSION 1.0.1
         DESCRIPTION "Header only library providing a mainloop"
@@ -28,12 +10,6 @@ if (MSVC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.29.30129 AND CM
 else ()
     set(CMAKE_CXX_STANDARD 20) # /std:c++latest for msvc and -std=c++20 for everyone else.
 endif ()
-
-CPMAddPackage(
-        NAME pf_common
-        GITHUB_REPOSITORY PetrFlajsingr/pf_common
-        GIT_TAG master
-)
 
 include(GNUInstallDirs)
 
@@ -47,10 +23,8 @@ target_include_directories(
 
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 
-target_link_libraries(${PROJECT_NAME} INTERFACE pf_common::pf_common)
 
-
-install(TARGETS ${PROJECT_NAME} pf_common magic_enum
+install(TARGETS ${PROJECT_NAME}
         EXPORT ${PROJECT_NAME}_Targets
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
