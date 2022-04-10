@@ -16,10 +16,10 @@
 #include <concepts>
 #include <functional>
 #include <memory>
-#include <pf_common/parallel/Safe.h>
 #include <queue>
 #include <set>
 #include <thread>
+#include <mutex>
 
 namespace pf {
 
@@ -140,9 +140,9 @@ class MainLoop {
    * @param delay time delay
    */
   void enqueue(std::invocable auto &&fnc, std::chrono::milliseconds delay) {
+    auto lock = std::scoped_lock{queueMtx};
     const auto execTime = std::chrono::steady_clock::now() + delay;
-    auto queueAccess = taskQueue.writeAccess();
-    queueAccess->emplace(std::forward<decltype(fnc)>(fnc), execTime);
+    taskQueue.emplace(std::forward<decltype(fnc)>(fnc), execTime);
   }
 
   /**
@@ -176,7 +176,9 @@ class MainLoop {
 
   std::function<void(std::chrono::nanoseconds)> mainLoopFnc = [](auto) {};
   std::function<void()> onDoneFnc = [] {};
-  Safe<std::priority_queue<details::DelayedTask, std::vector<details::DelayedTask>, std::greater<>>> taskQueue;
+
+  std::mutex queueMtx;
+  std::priority_queue<details::DelayedTask, std::vector<details::DelayedTask>, std::greater<>> taskQueue;
   std::set<details::RepeatedTask, std::less<details::RepeatedTask>> repeatedTasks;
   bool shouldStop = false;
 
@@ -217,10 +219,10 @@ void MainLoop::stop() {
 MainLoop::MainLoop() : mainThreadId(std::this_thread::get_id()) {}
 
 void MainLoop::callDelayedFunctions(std::chrono::steady_clock::time_point currentTime) {
-  auto queueAccess = taskQueue.writeAccess();
-  while (!queueAccess->empty() && queueAccess->top().execTime <= currentTime) {
-    queueAccess->top()();
-    queueAccess->pop();
+  auto lock = std::scoped_lock{queueMtx};
+  while (!taskQueue.empty() && taskQueue.top().execTime <= currentTime) {
+    taskQueue.top()();
+    taskQueue.pop();
   }
 }
 void MainLoop::callRepeatedFunctions(std::chrono::steady_clock::time_point currentTime) {
