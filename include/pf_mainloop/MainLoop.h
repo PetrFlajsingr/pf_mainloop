@@ -16,10 +16,10 @@
 #include <concepts>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <queue>
 #include <set>
 #include <thread>
-#include <mutex>
 
 namespace pf {
 
@@ -41,13 +41,13 @@ struct DelayedTask {
  * @brief Task to be run repeatedly.
  */
 struct RepeatedTask {
-  inline RepeatedTask(std::invocable auto &&fnc, std::chrono::milliseconds period)
+  inline RepeatedTask(std::invocable auto &&fnc, std::chrono::microseconds period)
       : fnc(std::forward<decltype(fnc)>(fnc)), execTime(std::chrono::steady_clock::now() + period), period(period) {}
 
   static inline std::size_t IdCounter{};
   std::function<void()> fnc;
   std::chrono::steady_clock::time_point execTime;
-  std::chrono::milliseconds period;
+  std::chrono::microseconds period;
   std::size_t id = IdCounter++;
 
   inline bool operator<(const RepeatedTask &rhs) const;
@@ -67,6 +67,7 @@ class RepeatCancel {
    * @brief Remove a repeated task from running in the main loop.
    */
   inline void cancel();
+
  private:
   std::function<void()> cancelFnc;
 };
@@ -123,7 +124,7 @@ class MainLoop {
     if (std::this_thread::get_id() == mainThreadId) {
       fnc();
     } else {
-      enqueue(std::forward<decltype(fnc)>(fnc), std::chrono::milliseconds{0});
+      enqueue(std::forward<decltype(fnc)>(fnc), std::chrono::microseconds{0});
     }
   }
   /**
@@ -131,7 +132,7 @@ class MainLoop {
    * @param fnc task to be executed
    */
   void forceEnqueue(std::invocable auto &&fnc) {
-    enqueue(std::forward<decltype(fnc)>(fnc), std::chrono::milliseconds{0});
+    enqueue(std::forward<decltype(fnc)>(fnc), std::chrono::microseconds{0});
   }
 
   /**
@@ -139,7 +140,7 @@ class MainLoop {
    * @param fnc task to be executed
    * @param delay time delay
    */
-  void enqueue(std::invocable auto &&fnc, std::chrono::milliseconds delay) {
+  void enqueue(std::invocable auto &&fnc, std::chrono::microseconds delay) {
     auto lock = std::scoped_lock{queueMtx};
     const auto execTime = std::chrono::steady_clock::now() + delay;
     taskQueue.emplace(std::forward<decltype(fnc)>(fnc), execTime);
@@ -151,7 +152,7 @@ class MainLoop {
    * @param period time period between executions
    * @return a structure which allows for stopping the periodic task
    */
-  RepeatCancel repeat(std::invocable auto &&fnc, std::chrono::milliseconds period) {
+  RepeatCancel repeat(std::invocable auto &&fnc, std::chrono::microseconds period) {
     if (std::this_thread::get_id() != mainThreadId) {
       assert(false && "MainLoop::repeat should only be called from the main thread");
     }
@@ -247,8 +248,7 @@ void RepeatedTask::operator()() {
   execTime = execTime + period;
   fnc();
 }
-bool
-RepeatedTask::operator<(const RepeatedTask &rhs) const {
+bool RepeatedTask::operator<(const RepeatedTask &rhs) const {
   return execTime < rhs.execTime;
 }
 }// namespace details
