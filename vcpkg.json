@@ -1,7 +1,7 @@
 {
   "name": "pf-mainloop",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "dependencies": [
   ],
-  "builtin-baseline": "59d355b5ec30d83aea2b18de5746f9c40224da9e"
+  "builtin-baseline": "bae8f8c7d837c631ca72daec4b14e243824135a5"
 }
